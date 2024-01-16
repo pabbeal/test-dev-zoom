@@ -1,14 +1,37 @@
-import Head from 'next/head'
-import Image from 'next/image'
+import React, { useEffect, useRef } from 'react';
+import Head from 'next/head';
+import Image from 'next/image';
 
-import styles from '@/styles/Home.module.css'
-import readFileInFolder from '@/utils/read-folder'
-import React from 'react';
+import styles from '@/styles/Home.module.css';
+import readFileInFolder from '@/utils/read-folder';
+import { cursorPlace, getCursorBackground } from '@/utils/curso-funcs';
+
 
 export default function Home({ fileNames }: { fileNames: string[] }) {
-  const [imageSrouce, setimageSrouce] = React.useState<number>(0);
+  const [imageSource, setimageSource] = React.useState<number>(0);
+  const cursor = useRef(null);
+  const imageToZoom = useRef(null);
+  const imageToZoomSrc = imageToZoom.current ? (imageToZoom.current as any).src : '';
 
-  const handleImageClick = (id: number) => setimageSrouce(id);
+  const handleImageClick = (ev: React.MouseEvent, id: number) => {
+    ev.preventDefault();
+    setimageSource(id);
+  }
+  
+  useEffect(() => {
+    if (imageSource && cursor !== null && imageToZoom !== null) {
+      (cursor.current as any).style.backgroundImage = "url(" + imageToZoomSrc + ")";
+      document.addEventListener('mousemove', function (ev) {
+        cursorPlace(cursor as React.MutableRefObject<any>, ev.clientX, ev.clientY);
+        getCursorBackground(cursor as React.MutableRefObject<any>, imageToZoom as React.MutableRefObject<any>, ev.clientX, ev.clientY);
+      });
+    }
+    
+    return document.removeEventListener('mousemove', function (ev) {
+      cursorPlace(cursor as any, ev.clientX, ev.clientY);
+      getCursorBackground(cursor as any, imageToZoom as any, ev.clientX, ev.clientY);
+    })
+  }, [imageSource]);
   return (
     <>
       <Head>
@@ -20,13 +43,28 @@ export default function Home({ fileNames }: { fileNames: string[] }) {
       <main className={styles.main}>
         <div className={styles.header}>
           {fileNames.map((fileName, index) => (
-            <div key={fileName} onClick={() => handleImageClick(index)}>
+            <div
+              key={fileName}
+              onClick={(ev) => handleImageClick(ev, index)}
+              className={styles.target}
+            >
               <Image src={`/assets/${fileName}`} alt={fileName} width={300} height={300} />
             </div>
           ))}
         </div>
-        <div className={styles.content}>
-          <Image src={`/assets/${fileNames[imageSrouce]}`} alt={fileNames[imageSrouce]} width={500} height={500} />
+        <div
+          id="image-container"
+          className={`${styles.content} image-container`}
+        >
+          <div ref={cursor} id="cursor" />
+          <Image
+            id="imagetozoom"
+            ref={imageToZoom}
+            src={`/assets/${fileNames[imageSource]}`}
+            alt={fileNames[imageSource]}
+            width={500}
+            height={500}
+          />
         </div>
       </main>
     </>
@@ -34,10 +72,10 @@ export default function Home({ fileNames }: { fileNames: string[] }) {
 }
 
 export async function getStaticProps() {
-  const fileNames = readFileInFolder('public/assets')
+  const fileNames = readFileInFolder('public/assets');
   return {
     props: {
       fileNames
     }
   }
-}
+};
