@@ -3,9 +3,12 @@ import Image from 'next/image'
 
 import styles from '@/styles/Home.module.css'
 import readFileInFolder from '@/utils/read-folder'
+import React from 'react';
 
 export default function Home({ fileNames }: { fileNames: string[] }) {
-  console.info(fileNames)
+  const [imageSrouce, setimageSrouce] = React.useState<number>(0);
+
+  const handleImageClick = (id: number) => setimageSrouce(id);
   return (
     <>
       <Head>
@@ -16,14 +19,14 @@ export default function Home({ fileNames }: { fileNames: string[] }) {
       </Head>
       <main className={styles.main}>
         <div className={styles.header}>
-          {fileNames.map((fileName) => (
-            <div key={fileName}>
+          {fileNames.map((fileName, index) => (
+            <div key={fileName} onClick={() => handleImageClick(index)}>
               <Image src={`/assets/${fileName}`} alt={fileName} width={300} height={300} />
             </div>
           ))}
         </div>
         <div className={styles.content}>
-          B
+          <Image src={`/assets/${fileNames[imageSrouce]}`} alt={fileNames[imageSrouce]} width={500} height={500} />
         </div>
       </main>
     </>
